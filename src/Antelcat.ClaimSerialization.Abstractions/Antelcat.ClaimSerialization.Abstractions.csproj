@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.0;net46;</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>preview</LangVersion>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <Title>Antelcat.ClaimSerialization.Abstractions</Title>
+        <Authors>Antelcat</Authors>
+        <Description>Abstractions of Antelcat.ClaimSerialization, including interfaces and attributes</Description>
+        <Copyright>Copyright Antelcat. All rights reserved</Copyright>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <FileVersion>1.0.0</FileVersion>
+    </PropertyGroup>
+
+    <Import Project="..\Antelcat.ClaimSerialization.Shared\Antelcat.ClaimSerialization.Shared.projitems" Label="Shared" />
+
+</Project>

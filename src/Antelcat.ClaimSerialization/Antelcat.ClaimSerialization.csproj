@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.Build.NoTargets/2.0.1">
+
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.0;net46;</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>preview</LangVersion>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Antelcat.ClaimSerialization.Abstractions\Antelcat.ClaimSerialization.Abstractions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Label="Package">
+
+        <!-- Pack the source generator binary -->
+        <None Include="..\Antelcat.ClaimSerialization.SourceGenerators\bin\$(Configuration)\netstandard2.0\Antelcat.ClaimSerialization.SourceGenerators.dll" PackagePath="analyzers\dotnet\cs" Pack="true" />
+    </ItemGroup>
+
+
+</Project>
