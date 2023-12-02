@@ -1,3 +1,5 @@
+using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -30,7 +32,6 @@ public partial class ClaimSerializableClass
     [Fact]
     public void Generate()
     {
-        var s    = JsonSerializer.Serialize('a');
         var path = Path.GetFullPath(@"..\..\..\..\");
         // Create an instance of the source generator.
         var generator = new ClaimSerializeGenerator();
@@ -57,4 +58,16 @@ public partial class ClaimSerializableClass
         var generatedFileSyntax = runResult.GeneratedTrees.Single(t => t.FilePath.EndsWith("Vector3.g.cs"));
     }
 
+    public class Serializable
+    {
+        public int Num { get; set; }
+    }
+
+    public class FooAttribute : Attribute
+    {
+        FooAttribute((Type, Type) between)
+        {
+            
+        }
+    }
 }

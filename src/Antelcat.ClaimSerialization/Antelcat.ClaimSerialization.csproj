@@ -1,21 +1,48 @@
-<Project Sdk="Microsoft.Build.NoTargets/2.0.1">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0;net46;</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
         <LangVersion>preview</LangVersion>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    </PropertyGroup>
 
+        <Version>1.0.0</Version>
+        <FileVersion>1.0.0</FileVersion>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        
+        <Authors>Antelcat</Authors>
+        <Title>Antelcat.ClaimSerialization</Title>
+        <PackageId>Antelcat.ClaimSerialization</PackageId>
+        <RootNamespace>Antelcat.ClaimSerialization</RootNamespace>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+        <Copyright>Copyright Antelcat. All rights reserved</Copyright>
+        <PackageTags>claim;serialization;auto;generate;</PackageTags>
+        <Description>Auto generate serialization implements to/from Claim</Description>
+
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Antelcat/Antelcat.ClaimSerialization</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/Antelcat/Antelcat.ClaimSerialization.git</RepositoryUrl>
+        
+        <PackageIcon>icon.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+    
     <ItemGroup>
       <ProjectReference Include="..\Antelcat.ClaimSerialization.Abstractions\Antelcat.ClaimSerialization.Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup Label="Package">
-
+        <None Pack="false" Include="bin\$(Configuration)\netstandard2.0\Antelcat.ClaimSerialization.dll" />
+        <None Pack="false" Include=".\bin\$(Configuration)\net46\Antelcat.ClaimSerialization.dll" />
         <!-- Pack the source generator binary -->
         <None Include="..\Antelcat.ClaimSerialization.SourceGenerators\bin\$(Configuration)\netstandard2.0\Antelcat.ClaimSerialization.SourceGenerators.dll" PackagePath="analyzers\dotnet\cs" Pack="true" />
+        <None Include="..\..\icon.png"  PackagePath="\" Pack="true">
+          <Link>icon.png</Link>
+        </None>
+        <None Include="..\..\README.md" PackagePath="\" Pack="true" />
     </ItemGroup>
 
 

@@ -9,6 +9,7 @@
     <Import_RootNamespace>Antelcat.ClaimSerialization.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\ClaimConverterAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\ClaimIgnoreAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\ClaimSerializableAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Attributes\ClaimTypeAttribute.cs" />
