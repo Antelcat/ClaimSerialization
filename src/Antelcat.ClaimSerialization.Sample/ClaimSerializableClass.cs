@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using Antelcat.Attributes;
+using Antelcat.ClaimSerialization.Attributes;
 
 namespace Antelcat.ClaimSerialization.Sample;
 

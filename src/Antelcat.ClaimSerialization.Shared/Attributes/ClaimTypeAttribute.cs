@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Security.Claims;
 
-namespace Antelcat.Attributes;
+namespace Antelcat.ClaimSerialization.Attributes;
 
 /// <summary>
 /// Replace the <see cref="Claim.Type"/> of the  <see cref="Claim"/>

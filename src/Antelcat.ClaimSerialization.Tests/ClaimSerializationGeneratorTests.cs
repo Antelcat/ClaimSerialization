@@ -1,10 +1,7 @@
 using System;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
-using Antelcat.Attributes;
+using Antelcat.ClaimSerialization.Attributes;
 using Antelcat.ClaimSerialization.SourceGenerators.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;

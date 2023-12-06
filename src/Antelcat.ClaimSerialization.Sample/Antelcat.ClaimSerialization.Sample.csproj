@@ -7,8 +7,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Antelcat.ClaimSerialization.Abstractions\Antelcat.ClaimSerialization.Abstractions.csproj"/>
         <ProjectReference ReferenceOutputAssembly="false" OutputItemType="Analyzer" Include="..\Antelcat.ClaimSerialization.SourceGenerators\Antelcat.ClaimSerialization.SourceGenerators.csproj"/>
+        <ProjectReference Include="..\Antelcat.ClaimSerialization\Antelcat.ClaimSerialization.csproj" />
     </ItemGroup>
 
 </Project>

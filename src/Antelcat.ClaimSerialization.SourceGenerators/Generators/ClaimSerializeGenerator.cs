@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
-using Antelcat.Attributes;
+using Antelcat.ClaimSerialization.Attributes;
+using Antelcat.ClaimSerialization.Interfaces;
 using Feast.CodeAnalysis.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -20,14 +19,13 @@ namespace Antelcat.ClaimSerialization.SourceGenerators.Generators;
 [Generator]
 public class ClaimSerializeGenerator : IIncrementalGenerator
 {
-    private const string Attribute          = "Antelcat.Attributes.ClaimSerializableAttribute";
-    private const string Claim              = "global::System.Security.Claims.Claim";
-    private const string IClaimSerializable = $"global::Antelcat.Interfaces.{nameof(IClaimSerializable)}";
-    private const string JsonSerializer     = "global::System.Text.Json.JsonSerializer";
-    private const string IEnumerable        = "global::System.Collections.Generic.IEnumerable";
-    private const string ICollection        = "global::System.Collections.Generic.ICollection";
-    private const string Dictionary         = "global::System.Collections.Generic.Dictionary";
-    private const string List               = "global::System.Collections.Generic.List";
+    private static readonly string Attribute          = $"{typeof(ClaimSerializableAttribute).FullName}";
+    private static readonly string IClaimSerializable = $"global::{typeof(IClaimSerializable).FullName}";
+    private const           string Claim              = "global::System.Security.Claims.Claim";
+    private const           string JsonSerializer     = "global::System.Text.Json.JsonSerializer";
+    private const           string IEnumerable        = "global::System.Collections.Generic.IEnumerable";
+
+    private const string group = nameof(group);
 
     private static readonly IEnumerable<TypeInfo> ParsableTypes = typeof(object)
         .Assembly
@@ -35,13 +33,13 @@ public class ClaimSerializeGenerator : IIncrementalGenerator
         .Where(x => x.GetMethods(BindingFlags.Public | BindingFlags.Static)
             .FirstOrDefault(m =>
             {
-                if( m.Name != nameof(int.Parse))return false;
+                if (m.Name != nameof(int.Parse)) return false;
                 var param = m.GetParameters();
                 return param.Length == 1 && param[0].ParameterType == typeof(string);
             }) != null)
         .Select(TypeInfo.FromType);
-        
-    
+
+
     private static string GetClaimValueTypes(ITypeSymbol symbol)
     {
         return symbol.SpecialType switch
@@ -74,7 +72,7 @@ public class ClaimSerializeGenerator : IIncrementalGenerator
             return
                 $"yield return new {Claim}({claimType}, $\"{{{propertyName}}}\", {GetClaimValueTypes(propertyType)});";
         }
-        
+
         var enumerable = (RuntimeTypeInfo)typeof(IEnumerable<>);
         if (!TypeInfo.FromSymbol(propertyType).IsAssignableTo(enumerable))
             return $"yield return new {Claim}({claimType}, {JsonSerializer}.Serialize({propertyName}));";
@@ -91,37 +89,36 @@ public class ClaimSerializeGenerator : IIncrementalGenerator
                      {{GeneratePropToClaim(claimType, argument, "item")}}
                  }
                  """;
-
     }
 
     private static string GenerateClaimToProp(
         string propName,
         string argumentName,
-        ITypeSymbol propertyType,bool inner = false)
+        ITypeSymbol propertyType, bool inner = false)
     {
-        
         // String 直接使用
         if (propertyType.SpecialType == SpecialType.System_String)
         {
-            return $"{(!inner ? $"{propName} = " : string.Empty )}{argumentName}";
+            return $"{(!inner ? $"{propName} = " : string.Empty)}{argumentName}";
         }
 
         // 可转换类型
-        if (propertyType.IsJsonBool() 
-            || propertyType.IsJsonNumber() 
+        if (propertyType.IsJsonBool()
+            || propertyType.IsJsonNumber()
             || propertyType.IsJsonString()
             || propertyType.TypeKind == TypeKind.Enum
             || ParsableTypes.Any(x => x.SameAs(TypeInfo.FromSymbol(propertyType))))
         {
-            return $"{(!inner ? $"{propName} = " : string.Empty )}{
-                ( propertyType.TypeKind != TypeKind.Enum ? propertyType.GetFullyQualifiedName() : $"global::{typeof(Enum).FullName}" )
+            return $"{(!inner ? $"{propName} = " : string.Empty)}{
+                (propertyType.TypeKind != TypeKind.Enum ? propertyType.GetFullyQualifiedName() : $"global::{typeof(Enum).FullName}")
             }.Parse{(
-                propertyType.TypeKind == TypeKind.Enum ? $"<{propertyType.GetFullyQualifiedName()}>" : string.Empty )  }({argumentName})";
+                propertyType.TypeKind == TypeKind.Enum ? $"<{propertyType.GetFullyQualifiedName()}>" : string.Empty)}({argumentName})";
         }
 
         var enumerable = (RuntimeTypeInfo)typeof(IEnumerable<>);
         if (!TypeInfo.FromSymbol(propertyType).IsAssignableTo(enumerable))
-            return $"{(!inner ? $"{propName} = " : string.Empty )}{JsonSerializer}.Deserialize<{propertyType.GetFullyQualifiedName()}>({argumentName})";
+            return
+                $"{(!inner ? $"{propName} = " : string.Empty)}{JsonSerializer}.Deserialize<{propertyType.GetFullyQualifiedName()}>({argumentName})";
         var comp = propertyType
             .Interfaces
             .FirstOrDefault(x =>
@@ -134,7 +131,8 @@ public class ClaimSerializeGenerator : IIncrementalGenerator
             _                        => ".ToList()"
         };
 
-        return $"{(!inner ? $"{propName} = " : string.Empty )}pair.Value.Select(x=> {GenerateClaimToProp(propName, "x.Value", argument, true)}){suffix}";
+        return
+            $"{(!inner ? $"{propName} = " : string.Empty)}{group}.Select(x=> {GenerateClaimToProp(propName, "x.Value", argument, true)}){suffix}";
     }
 
 
@@ -178,11 +176,11 @@ public class ClaimSerializeGenerator : IIncrementalGenerator
                 .ToList();
             var propToClaims = transform
                 .Where(x => !x.typeSymbol.IsReadOnly)
-                .Select(p => p.converter == null 
-                    ?  GeneratePropToClaim(p.claimType, p.typeSymbol.Type, p.propName)
+                .Select(p => p.converter == null
+                    ? GeneratePropToClaim(p.claimType, p.typeSymbol.Type, p.propName)
                     : $"yield return new {Claim}({p.claimType}, new {p.converter.GetFullyQualifiedName()}().ConvertToString({p.propName}));"
                 );
-            
+
             var claimsToProps = transform
                 .Where(x =>
                 {
@@ -197,12 +195,13 @@ public class ClaimSerializeGenerator : IIncrementalGenerator
                             true
                         ), x.typeSymbol.Locations.First()));
                     }
+
                     return !x.typeSymbol.IsWriteOnly;
                 })
                 .Select(p => $"case {p.claimType} :"
                              + (p.converter == null
-                                 ? GenerateClaimToProp(p.propName, "pair.Value.First().Value", p.typeSymbol.Type)
-                                 : $"{p.propName} = ({p.typeSymbol.Type.GetFullyQualifiedName()})new {p.converter.GetFullyQualifiedName()}().ConvertFromString(pair.Value.First().Value)")
+                                 ? GenerateClaimToProp(p.propName, $"{group}.First().Value", p.typeSymbol.Type)
+                                 : $"{p.propName} = ({p.typeSymbol.Type.GetFullyQualifiedName()})new {p.converter.GetFullyQualifiedName()}().ConvertFromString({group}.First().Value)")
                              + "; break;");
 
             var head = TriviaList(
@@ -233,19 +232,9 @@ public class ClaimSerializeGenerator : IIncrementalGenerator
                                     $$"""
                                       public void {{nameof(Interfaces.IClaimSerializable.FromClaims)}}({{IEnumerable}}<{{Claim}}> claims)
                                       {
-                                          foreach (var pair in claims.Aggregate(new {{Dictionary}}<string, {{ICollection}}<{{Claim}}>>(), (d, c) =>
-                                             {
-                                                 if (!d.TryGetValue(c.Type, out var value))
-                                                 {
-                                                     value     = new {{List}}<{{Claim}}>();
-                                                     d[c.Type] = value;
-                                                 }
-                                      
-                                                 value.Add(c);
-                                                 return d;
-                                             }))
+                                          foreach (var {{group}} in claims.GroupBy(x => x.Type))
                                           {
-                                              switch (pair.Key)
+                                              switch ({{group}}.Key)
                                               {
                                                   {{string.Join("\n", claimsToProps).Replace("\n", "\n\t\t\t\t")}}
                                               }
@@ -260,19 +249,19 @@ public class ClaimSerializeGenerator : IIncrementalGenerator
         }
     }
 
-    private static bool FilterAttribute(IPropertySymbol symbol,SourceProductionContext context)
+    private static bool FilterAttribute(IPropertySymbol symbol, SourceProductionContext context)
     {
         var attrs = symbol.GetAttributes();
-        
+
         if (!attrs.Any(a => TypeInfo
                 .FromSymbol(a.AttributeClass!)
                 .SameAs(typeof(ClaimIgnoreAttribute))))
             return true;
 
         foreach (var info in attrs.Select(attr =>
-                     TypeInfo.FromSymbol(attr.AttributeClass!))
-                     .Where(info => 
-                         info.SameAs(typeof(ClaimTypeAttribute)) 
+                         TypeInfo.FromSymbol(attr.AttributeClass!))
+                     .Where(info =>
+                         info.SameAs(typeof(ClaimTypeAttribute))
                          || info.SameAs(typeof(ClaimConverterAttribute))))
         {
             context.ReportDiagnostic(Diagnostic.Create(new DiagnosticDescriptor(
@@ -285,7 +274,7 @@ public class ClaimSerializeGenerator : IIncrementalGenerator
             ), symbol.Locations.First(), info.Name, nameof(ClaimIgnoreAttribute)));
             return false;
         }
-        
+
         return false;
     }
 
@@ -302,7 +291,7 @@ public class ClaimSerializeGenerator : IIncrementalGenerator
         }
 
         INamedTypeSymbol? converter = null;
-        var convertAttr = attrs.FirstOrDefault(x=>
+        var convertAttr = attrs.FirstOrDefault(x =>
             x.AttributeClass.GetFullyQualifiedName() == $"global::{typeof(ClaimConverterAttribute).FullName}");
         if (convertAttr is { ConstructorArguments.Length: 1 })
         {
@@ -316,7 +305,7 @@ public class ClaimSerializeGenerator : IIncrementalGenerator
                     nameof(ClaimSerializableAttribute),
                     DiagnosticSeverity.Error,
                     true
-                ), symbol.Locations.First(),converter.Name));
+                ), symbol.Locations.First(), converter.Name));
                 converter = null;
             }
         }
