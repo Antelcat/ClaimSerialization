@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Security.Claims;
 
-namespace Antelcat.ClaimSerialization.Interfaces;
+namespace Antelcat.ClaimSerialization;
 
 public interface IClaimSerializable
 {

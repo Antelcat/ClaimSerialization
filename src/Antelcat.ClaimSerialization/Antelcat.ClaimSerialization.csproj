@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netstandard2.0;net46;</TargetFrameworks>
+        <TargetFrameworks>netstandard2.0;net46;net462</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsPackable>true</IsPackable>
         <LangVersion>preview</LangVersion>
 
-        <Version>1.1.1</Version>
-        <FileVersion>1.1.1</FileVersion>
-        <AssemblyVersion>1.1.1</AssemblyVersion>
+        <Version>2.0.0</Version>
+        <FileVersion>2.0.0</FileVersion>
+        <AssemblyVersion>2.0.0</AssemblyVersion>
         
         <Authors>Antelcat</Authors>
         <Title>Antelcat.ClaimSerialization</Title>
@@ -37,6 +37,22 @@
           <Link>icon.png</Link>
         </None>
         <None Include="..\..\README.md" PackagePath="\" Pack="true" />
+    </ItemGroup>
+    
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+      <PackageReference Include="System.Text.Json" Version="8.0.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
+        <PackageReference Include="System.Text.Json" Version="8.0.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Antelcat.IL" Version="1.0.0" />
     </ItemGroup>
 
     <Import Project="..\Antelcat.ClaimSerialization.Shared\Antelcat.ClaimSerialization.Shared.projitems" Label="Shared" />

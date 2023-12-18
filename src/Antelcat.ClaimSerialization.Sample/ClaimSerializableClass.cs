@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using Antelcat.ClaimSerialization.Attributes;
+using Antelcat.ClaimSerialization.ComponentModel;
 
 namespace Antelcat.ClaimSerialization.Sample;
 
 [ClaimSerializable]
-public partial class ClaimSerializableClass
+public unsafe partial class ClaimSerializableClass
 {
+    
     [ClaimType(ClaimTypes.Role)]
-    public ICollection<string>? Static { get; set; }
+    public string* Static { get; set; }
 
     public int Num { get; set; }
 

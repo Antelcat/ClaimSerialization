@@ -1,4 +1,4 @@
-﻿namespace Antelcat.ClaimSerialization.Attributes;
+﻿namespace Antelcat.ClaimSerialization.ComponentModel;
 
 [AttributeUsage(AttributeTargets.Property)]
 public class ClaimConverterAttribute(Type converterType) : Attribute;

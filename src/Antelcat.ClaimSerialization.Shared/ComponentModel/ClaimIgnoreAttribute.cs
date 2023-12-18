@@ -1,4 +1,4 @@
-﻿namespace Antelcat.ClaimSerialization.Attributes;
+﻿namespace Antelcat.ClaimSerialization.ComponentModel;
 
 /// <summary>
 /// Properties marked this attribute will not be mapped into claims

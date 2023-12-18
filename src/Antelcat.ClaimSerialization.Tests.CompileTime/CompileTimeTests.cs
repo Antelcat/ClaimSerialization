@@ -1,31 +1,19 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using Antelcat.ClaimSerialization.Attributes;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Antelcat.ClaimSerialization.ComponentModel;
 using Antelcat.ClaimSerialization.SourceGenerators.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 
-namespace Antelcat.ClaimSerialization.Tests;
+namespace Antelcat.ClaimSerialization.Tests.CompileTime;
 
-public class ClaimSerializationGeneratorTests
+public class CompileTimeTests
 {
-    private const string VectorClassText = @"
-using Antelcat.Attributes;
-
-namespace Antelcat.ClaimSerialization.SourceGenerators.Sample;
-
-[ClaimSerializable]
-public partial class ClaimSerializableClass
-{
-    public int Num { get; init; }
-    
-    public string Str { get; set; } = string.Empty;
-}
-
-";
-
     [Fact]
     public void Generate()
     {
@@ -37,7 +25,7 @@ public partial class ClaimSerializableClass
         var driver = CSharpGeneratorDriver.Create(generator);
 
         // We need to create a compilation with the required source code.
-        var compilation = CSharpCompilation.Create(nameof(ClaimSerializationGeneratorTests),
+        var compilation = CSharpCompilation.Create(nameof(CompileTimeTests),
             new[]
             {
                 CSharpSyntaxTree.ParseText(File.ReadAllText(
@@ -55,16 +43,22 @@ public partial class ClaimSerializableClass
         var generatedFileSyntax = runResult.GeneratedTrees.Single(t => t.FilePath.EndsWith("Vector3.g.cs"));
     }
 
-    public class Serializable
+    public class Foo : JsonConverter<string>
     {
-        public int Num { get; set; }
-    }
-
-    public class FooAttribute : Attribute
-    {
-        FooAttribute((Type, Type) between)
+        public Foo(string str)
         {
             
         }
+
+        public override string? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
+        {
+            throw new NotImplementedException();
+        }
     }
+   
 }
