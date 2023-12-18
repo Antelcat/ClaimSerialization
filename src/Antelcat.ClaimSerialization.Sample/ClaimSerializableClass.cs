@@ -10,7 +10,7 @@ public unsafe partial class ClaimSerializableClass
 {
     
     [ClaimType(ClaimTypes.Role)]
-    public string* Static { get; set; }
+    public string Static { get; set; }
 
     public int Num { get; set; }
 
