@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+﻿using System.Text.Json;
 
 namespace Antelcat.ClaimSerialization.Tests.Runtime;
 
@@ -22,13 +22,7 @@ public class RuntimeTest
     [Test]
     public void TestTypes()
     {
-        var list = new List<IdentityModel.Role>() { IdentityModel.Role.Admin };
-        var args = list.Cast<object>();
-        var method = typeof(Enumerable)
-            .GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .First(x => 
-                x.Name == nameof(Enumerable.Select)
-                && x.GetParameters()[1].ParameterType.GetGenericTypeDefinition() == typeof(Func<,>));
+        JsonSerializer.Serialize(new object(),typeof(Type));
     }
 
     private static bool Predicate(Type type)
@@ -63,4 +57,21 @@ public class RuntimeTest
             yield return @interface;
         }
     }
+
+    [Test]
+    [Req(Arg = "")]
+    public void TestRef()
+    {
+        var a = (object)1;
+
+        Func<object?, object?>     c = o => o;
+        Console.WriteLine(a);
+    }
+
 }
+
+public class ReqAttribute : Attribute
+{
+    public required string Arg { get; set; }
+}
+delegate void Setter<T>(ref T target, T value);

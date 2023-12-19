@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Feast.CodeAnalysis.LiteralG
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Antelcat.ClaimSerialization.Tests.Runtime", "Antelcat.ClaimSerialization.Tests.Runtime\Antelcat.ClaimSerialization.Tests.Runtime.csproj", "{09C48496-D93E-4C1F-BE59-FAA226206B19}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Antelcat.IL", "..\extern\IL\src\Antelcat.IL\Antelcat.IL.csproj", "{1F3D864A-F3E5-48D9-85E0-FF1D6E9E77D9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,10 @@ Global
 		{09C48496-D93E-4C1F-BE59-FAA226206B19}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09C48496-D93E-4C1F-BE59-FAA226206B19}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09C48496-D93E-4C1F-BE59-FAA226206B19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F3D864A-F3E5-48D9-85E0-FF1D6E9E77D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F3D864A-F3E5-48D9-85E0-FF1D6E9E77D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F3D864A-F3E5-48D9-85E0-FF1D6E9E77D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F3D864A-F3E5-48D9-85E0-FF1D6E9E77D9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -68,6 +74,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{7184E740-24E8-4DB5-8484-A81B55DF4BB7} = {30C60FDF-F02F-45CF-88B0-1CDDF8596483}
 		{A81EC26E-7A38-42B4-96CD-1B005BB40AB5} = {30C60FDF-F02F-45CF-88B0-1CDDF8596483}
+		{1F3D864A-F3E5-48D9-85E0-FF1D6E9E77D9} = {30C60FDF-F02F-45CF-88B0-1CDDF8596483}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FB0E866D-B450-4CBD-BEF0-224F0B1856B8}

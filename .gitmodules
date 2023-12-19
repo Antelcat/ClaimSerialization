@@ -1,3 +1,6 @@
 [submodule "extern/CodeAnalysis"]
 	path = extern/CodeAnalysis
 	url = https://github.com/feast107/CodeAnalysis.git
+[submodule "extern/IL"]
+	path = extern/IL
+	url = https://github.com/Antelcat/IL.git

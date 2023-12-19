@@ -1,6 +1,7 @@
-﻿namespace Antelcat.ClaimSerialization;
+﻿
+namespace Antelcat.ClaimSerialization;
 
 public abstract class ClaimSerializerContext
 {
-    
 }
+

@@ -52,8 +52,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Antelcat.IL" Version="1.0.0" />
+      <ProjectReference Include="..\..\extern\IL\src\Antelcat.IL\Antelcat.IL.csproj" />
     </ItemGroup>
+
 
     <Import Project="..\Antelcat.ClaimSerialization.Shared\Antelcat.ClaimSerialization.Shared.projitems" Label="Shared" />
 
