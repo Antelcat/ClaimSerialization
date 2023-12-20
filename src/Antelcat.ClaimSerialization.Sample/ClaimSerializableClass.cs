@@ -1,12 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.Security.Claims;
 using Antelcat.ClaimSerialization.ComponentModel;
+using Antelcat.ClaimSerialization.Metadata;
 
 namespace Antelcat.ClaimSerialization.Sample;
 
-[ClaimSerializable]
-public unsafe partial class ClaimSerializableClass
+public partial class ClaimSerializableClass
 {
     
     [ClaimType(ClaimTypes.Role)]
@@ -28,4 +27,11 @@ public unsafe partial class ClaimSerializableClass
     }
 
 }
-
+[ClaimSerializable(typeof(ClaimSerializableClass))]
+public partial class ClaimSerializationClass : ClaimSerializerContext
+{
+    public override ClaimTypeInfo? GetTypeInfo(Type type)
+    {
+        throw new NotImplementedException();
+    }
+}

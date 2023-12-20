@@ -1,20 +1,22 @@
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using Antelcat.ClaimSerialization.ComponentModel;
+using Feast.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+using Assembly = Feast.CodeAnalysis.CompileTime.Assembly;
 
 
 namespace Antelcat.ClaimSerialization.SourceGenerators.Generators
 {
     [Generator]
-    public class ClaimSerializeGenerator : IIncrementalGenerator
+    public class ClaimSerializeContextGenerator : IIncrementalGenerator
     {
         private static readonly string Attribute          = $"{typeof(ClaimSerializableAttribute).FullName}";
         private static readonly string IClaimSerializable = $"global::{typeof(IClaimSerializable).FullName}";
@@ -133,117 +135,120 @@ namespace Antelcat.ClaimSerialization.SourceGenerators.Generators
                 $"{(!inner ? $"{propName} = " : string.Empty)}{group}.Select(x=> {GenerateClaimToProp(propName, "x.Value", argument, true)}){suffix}";
         }
 
-
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var provider = context.SyntaxProvider
                 .ForAttributeWithMetadataName(
                     Attribute,
                     (s, _) => s is ClassDeclarationSyntax,
-                    (ctx, _) => (ctx.TargetNode as ClassDeclarationSyntax)!);
+                    (ctx, _) => ctx);
 
             context.RegisterSourceOutput(
                 context.CompilationProvider.Combine(provider.Collect()),
-                (ctx, t) => GenerateCode(ctx, t.Left, t.Right));
-        }
-
-        private static void GenerateCode(SourceProductionContext context, Compilation compilation,
-            ImmutableArray<ClassDeclarationSyntax> classDeclarations)
-        {
-            // Go through all filtered class declarations.
-            foreach (var classDeclarationSyntax in classDeclarations)
-            {
-                // We need to get semantic model of the class to retrieve metadata.
-                var semanticModel = compilation.GetSemanticModel(classDeclarationSyntax.SyntaxTree);
-                // Symbols allow us to get the compile-time information.
-                if (ModelExtensions.GetDeclaredSymbol(semanticModel, classDeclarationSyntax) is not INamedTypeSymbol
-                    classSymbol)
-                    continue;
-
-                var namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
-
-                // 'Identifier' means the token of the node. Get class name from the syntax node.
-                var className = classDeclarationSyntax.Identifier.Text;
-
-                // Go through all class members with a particular type (property) to generate method lines.
-                var transform = classSymbol.GetMembers()
-                    .OfType<IPropertySymbol>()
-                    .Where(x => FilterAttribute(x, context))
-                    .Select(x => Transform(x, context))
-                    .ToList();
-                var propToClaims = transform
-                    .Where(x => !x.typeSymbol.IsReadOnly)
-                    .Select(p => p.converter == null
-                        ? GeneratePropToClaim(p.claimType, p.typeSymbol.Type, p.propName)
-                        : $"yield return new {Claim}({p.claimType}, new {p.converter.GetFullyQualifiedName()}().ConvertToString({p.propName}));"
-                    );
-
-                var claimsToProps = transform
-                    .Where(x =>
+                (ctx, t) =>
+                {
+                    foreach (var syntax in t.Right)
                     {
-                        if (x.typeSymbol.IsInitOnly())
+                        // We need to get semantic model of the class to retrieve metadata.
+                        var semanticModel = t.Left.GetSemanticModel(syntax.TargetNode.SyntaxTree);
+                        // Symbols allow us to get the compile-time information.
+                        if (semanticModel.GetDeclaredSymbol(syntax.TargetNode) is not INamedTypeSymbol
+                            classSymbol)
+                            continue;
+                        var type          = (syntax.TargetSymbol as INamedTypeSymbol).ToType();
+                        var ass           = type.Assembly;
+                        var attr          = syntax.Attributes.First().ToAttribute<ClaimSerializableAttribute>();
+                        if (type.Assembly.Equals(attr.Type.Assembly))
                         {
-                            context.ReportDiagnostic(Diagnostic.Create(new DiagnosticDescriptor(
-                                nameof(CS0002),
-                                "Error",
-                                string.Format(CS0002, nameof(ClaimTypeAttribute)),
-                                nameof(ClaimSerializableAttribute),
-                                DiagnosticSeverity.Error,
-                                true
-                            ), x.typeSymbol.Locations.First()));
+
                         }
 
-                        return !x.typeSymbol.IsWriteOnly;
-                    })
-                    .Select(p => $"case {p.claimType} :"
-                                 + (p.converter == null
-                                     ? GenerateClaimToProp(p.propName, $"{group}.First().Value", p.typeSymbol.Type)
-                                     : $"{p.propName} = ({p.typeSymbol.Type.GetFullyQualifiedName()})new {p.converter.GetFullyQualifiedName()}().ConvertFromString({group}.First().Value)")
-                                 + "; break;");
-                
-                var head = TriviaList(
-                    Comment("// <auto-generated/> By Antelcat.ClaimSerialization.SourceGenerators"),
-                    Trivia(NullableDirectiveTrivia(Token(SyntaxKind.EnableKeyword), true)),
-                    Trivia(PragmaWarningDirectiveTrivia(Token(SyntaxKind.DisableKeyword), true)));
-            
-                var codes = CompilationUnit()
-                    .AddUsings( //using
-                        "System",
-                        "System.Collections.Generic",
-                        "System.Linq",
-                        "System.ComponentModel"
-                    ).WithLeadingTrivia(head)
-                    .AddMembers( // namespace
-                        namespaceName.ToNameSyntax().ToNamespaceDeclaration()
-                            .AddMembers( //class
-                                className.ToClassDeclaration()
-                                    .AddModifiers(SyntaxKind.PartialKeyword)
-                                    .AddBaseListTypes(IClaimSerializable)
-                                    .AddMembers(
-                                        $$"""
-                                          public {{IEnumerable}}<{{Claim}}> {{nameof(ClaimSerialization.IClaimSerializable.GetClaims)}}()
-                                          {
-                                              {{string.Join("\n", propToClaims).Replace("\n", "\n\t\t")}}
-                                          }
-                                          """,
-                                        $$"""
-                                          public void {{nameof(ClaimSerialization.IClaimSerializable.FromClaims)}}({{IEnumerable}}<{{Claim}}> claims)
-                                          {
-                                              foreach (var {{group}} in claims.GroupBy(x => x.Type))
-                                              {
-                                                  switch ({{group}}.Key)
-                                                  {
-                                                      {{string.Join("\n", claimsToProps).Replace("\n", "\n\t\t\t\t")}}
-                                                  }
-                                              }
-                                          }
-                                          """
-                                    )
-                            )).NormalizeWhitespace();
+                        var namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
 
-                // Add the source code to the compilation.
-                context.AddSource($"{className}.g.cs", codes.GetText(Encoding.UTF8));
-            }
+                        // 'Identifier' means the token of the node. Get class name from the syntax node.
+                        var className = (syntax.TargetSymbol as INamedTypeSymbol).Name;
+
+                        // Go through all class members with a particular type (property) to generate method lines.
+                        var transform = classSymbol.GetMembers()
+                            .OfType<IPropertySymbol>()
+                            .Where(x => FilterAttribute(x, ctx))
+                            .Select(x => Transform(x, ctx))
+                            .ToList();
+                        var propToClaims = transform
+                            .Where(x => !x.typeSymbol.IsReadOnly)
+                            .Select(p => p.converter == null
+                                ? GeneratePropToClaim(p.claimType, p.typeSymbol.Type, p.propName)
+                                : $"yield return new {Claim}({p.claimType}, new {p.converter.GetFullyQualifiedName()}().ConvertToString({p.propName}));"
+                            );
+
+                        var claimsToProps = transform
+                            .Where(x =>
+                            {
+                                if (x.typeSymbol.IsInitOnly())
+                                {
+                                    ctx.ReportDiagnostic(Diagnostic.Create(new DiagnosticDescriptor(
+                                        nameof(CS0002),
+                                        "Error",
+                                        string.Format(CS0002, nameof(ClaimTypeAttribute)),
+                                        nameof(ClaimSerializableAttribute),
+                                        DiagnosticSeverity.Error,
+                                        true
+                                    ), x.typeSymbol.Locations.First()));
+                                }
+
+                                return !x.typeSymbol.IsWriteOnly;
+                            })
+                            .Select(p => $"case {p.claimType} :"
+                                         + (p.converter == null
+                                             ? GenerateClaimToProp(p.propName, $"{group}.First().Value",
+                                                 p.typeSymbol.Type)
+                                             : $"{p.propName} = ({p.typeSymbol.Type.GetFullyQualifiedName()})new {p.converter.GetFullyQualifiedName()}().ConvertFromString({group}.First().Value)")
+                                         + "; break;");
+
+                        var head = TriviaList(
+                            Comment("// <auto-generated/> By Antelcat.ClaimSerialization.SourceGenerators"),
+                            Trivia(NullableDirectiveTrivia(Token(SyntaxKind.EnableKeyword), true)),
+                            Trivia(PragmaWarningDirectiveTrivia(Token(SyntaxKind.DisableKeyword), true)));
+
+                        var codes = CompilationUnit()
+                            .AddUsings( //using
+                                "System",
+                                "System.Collections.Generic",
+                                "System.Linq",
+                                "System.ComponentModel"
+                            ).WithLeadingTrivia(head)
+                            .AddMembers( // namespace
+                                namespaceName.ToNameSyntax().ToNamespaceDeclaration()
+                                    .AddMembers( //class
+                                        className.ToClassDeclaration()
+                                            .AddModifiers(SyntaxKind.PartialKeyword)
+                                            .AddBaseListTypes(IClaimSerializable)
+                                            .AddMembers(
+                                                $$"""
+                                                  public {{IEnumerable}}<{{Claim}}> {{nameof(ClaimSerialization.IClaimSerializable.GetClaims)}}()
+                                                  {
+                                                      {{string.Join("\n", propToClaims).Replace("\n", "\n\t\t")}}
+                                                  }
+                                                  """,
+                                                $$"""
+                                                  public void {{nameof(ClaimSerialization.IClaimSerializable.FromClaims)}}({{IEnumerable}}<{{Claim}}> claims)
+                                                  {
+                                                      foreach (var {{group}} in claims.GroupBy(x => x.Type))
+                                                      {
+                                                          switch ({{group}}.Key)
+                                                          {
+                                                              {{string.Join("\n", claimsToProps).Replace("\n", "\n\t\t\t\t")}}
+                                                          }
+                                                      }
+                                                  }
+                                                  """
+                                            )
+                                    )).NormalizeWhitespace();
+
+                        // Add the source code to the compilation.
+                        ctx.AddSource($"{className}.g.cs", codes.GetText(Encoding.UTF8));
+                    }
+                });
         }
 
         private static bool FilterAttribute(IPropertySymbol symbol, SourceProductionContext context)
@@ -321,6 +326,11 @@ namespace Antelcat.ClaimSerialization.SourceGenerators.Generators
 namespace Feast.CodeAnalysis.CompileTime
 {
     internal partial class Type
+    {
+        
+    }
+
+    internal partial class Assembly
     {
         
     }

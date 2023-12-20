@@ -7,7 +7,7 @@ namespace Antelcat.ClaimSerialization.Metadata.Internal;
 
 internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
 {
-    protected override Constructor                     Constructor { get; }
+    protected override Constructor   Constructor { get; }
     protected override SetProperty[] Setters     { get; }
     protected override GetProperty[] Getters     { get; }
 
@@ -60,7 +60,7 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
         if (propertyType    == typeof(string)
             || propertyType == typeof(object)
             || propertyType.IsEnum
-            || CacheContext.StringConvertableSystemTypes.ContainsKey(propertyType))
+            || RuntimeCacheContext.StringConvertableSystemTypes.ContainsKey(propertyType))
             return new GetProperty(claimType, x => getter(x)!);
 
         if (CanBeIEnumerable(propertyType, out var elementType))
@@ -72,6 +72,7 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
         var serialize = Serialize(propertyType);
         return new GetProperty(claimType, x => getter(x)!, x => Yield(serialize(x)));
     }
+
     private static SetProperty ResolveSetHandler(PropertyInfo propertyInfo)
     {
         var claimType    = GetClaimType(propertyInfo);
@@ -83,7 +84,7 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
         if (propertyType.IsEnum)
             return new SetProperty(claimType, setterFun, s => Enum.Parse(propertyType, s.First()));
 
-        if (CacheContext.StringConvertableSystemTypes.TryGetValue(propertyType, out var handler))
+        if (RuntimeCacheContext.StringConvertableSystemTypes.TryGetValue(propertyType, out var handler))
             return new SetProperty(claimType, setterFun, s => handler(s.First()));
         if (CanBeIEnumerable(propertyType, out var elementType))
         {
@@ -101,12 +102,13 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
         if (elementType    == typeof(string)
             || elementType == typeof(object)
             || elementType.IsEnum
-            || CacheContext.StringConvertableSystemTypes.ContainsKey(elementType))
+            || RuntimeCacheContext.StringConvertableSystemTypes.ContainsKey(elementType))
             return enumerable =>
                 enumerable.Cast<object>().Select(x => x?.ToString());
 
         return enumerable => ((IEnumerable<object>)enumerable).Select(Serialize(elementType));
     }
+
     private static Func<IEnumerable<string>, IEnumerable<object?>> SetSelect(Type elementType)
     {
         if (elementType == typeof(string) || elementType == typeof(object))
@@ -115,7 +117,7 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
         if (elementType.IsEnum)
             return enumerable => enumerable.Select(x => Enum.Parse(elementType, x));
 
-        if (CacheContext.StringConvertableSystemTypes.TryGetValue(elementType, out var handler))
+        if (RuntimeCacheContext.StringConvertableSystemTypes.TryGetValue(elementType, out var handler))
             return enumerable => enumerable.Select(handler);
 
         return enumerable => enumerable.Select(Deserialize(elementType));
@@ -141,7 +143,7 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
             }
         }
 
-        foreach (var @interface in CacheContext.EnumAllInterfaces(type))
+        foreach (var @interface in RuntimeCacheContext.EnumAllInterfaces(type))
         {
             if (Selector(@interface, out elementType))
             {
@@ -162,8 +164,8 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
 
     private static Func<IEnumerable<object?>, object> MapToCollection(Type collectionType, Type elementType)
     {
-        var add  = CacheContext.Default.GetCollectionAdder(elementType);
-        var ctor = CacheContext.Default.GetCollectionConstructor(collectionType);
+        var add  = RuntimeCacheContext.Default.GetCollectionAdder(elementType);
+        var ctor = RuntimeCacheContext.Default.GetCollectionConstructor(collectionType);
         return x =>
         {
             var set = ctor()!;
@@ -175,11 +177,12 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
             return set;
         };
     }
+
     private static Func<IEnumerable<object?>, object> MapTo(Type containerType, Type elementType)
     {
         if (containerType.IsArray) // is T[]
         {
-            var toArray = CacheContext.Default.GetToArrayHandler(elementType);
+            var toArray = RuntimeCacheContext.Default.GetToArrayHandler(elementType);
             return x => toArray(null, x)!;
         }
 
@@ -188,11 +191,11 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
             var genericTypeDefinition = containerType.GetGenericTypeDefinition();
             if (genericTypeDefinition == typeof(List<>)) // is List<T>
             {
-                var toList = CacheContext.Default.GetToListHandler(elementType);
+                var toList = RuntimeCacheContext.Default.GetToListHandler(elementType);
                 return x => toList(null, x)!;
             }
 
-            if (CacheContext.SystemGenericCollectionTypes.Any(x =>
+            if (RuntimeCacheContext.SystemGenericCollectionTypes.Any(x =>
                     x.MakeGenericType(elementType) == containerType)) // is System Generic Collection
             {
                 return MapToCollection(containerType, elementType);
@@ -209,11 +212,11 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
         {
             if (containerType.IsAssignableFrom(typeof(List<>).MakeGenericType(elementType))) // can be List<T>
             {
-                var toList = CacheContext.Default.GetToListHandler(elementType);
+                var toList = RuntimeCacheContext.Default.GetToListHandler(elementType);
                 return x => toList(null, x)!;
             }
 
-            var type = CacheContext.SystemGenericCollectionTypes
+            var type = RuntimeCacheContext.SystemGenericCollectionTypes
                 .Select(x => x.MakeGenericType(elementType))
                 .FirstOrDefault(containerType.IsAssignableFrom);
 
@@ -225,6 +228,5 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
 
         throw new ArgumentException("Not supported type.");
     }
-
 
 }

@@ -4,9 +4,9 @@ using Antelcat.IL.Extensions;
 
 namespace Antelcat.ClaimSerialization.Metadata.Internal;
 
-internal class CacheContext
+internal class RuntimeCacheContext
 {
-    internal static CacheContext Default { get; } = new();
+    internal static RuntimeCacheContext Default { get; } = new();
 
     private static readonly Type CollectionType = typeof(ICollection<>);
 
@@ -18,8 +18,7 @@ internal class CacheContext
 
     internal static IReadOnlyDictionary<Type, Func<string, object>> StringConvertableSystemTypes { get; }
         = GetStringConvertableSystemTypes()
-            .ToDictionary(static x => x.Key,
-                static x => x.Value);
+            .ToDictionary(static x => x.Key, static x => x.Value);
 
     internal static IEnumerable<Type> SystemGenericCollectionTypes { get; } =
         typeof(SortedSet<>).Assembly.ExportedTypes
@@ -69,11 +68,21 @@ internal class CacheContext
         }
     }
 
+    internal ClaimTypeInfo CreateRuntimeTypeInfo(Type type) =>
+        (ClaimTypeInfo)RuntimeClaimTypeInfo.MakeGenericMethod(type).Invoke(null, []);
+
+    private static RuntimeClaimTypeInfo<T> CreateRuntimeTypeInfo<T>() => new();
+
+    private MethodInfo RuntimeClaimTypeInfo { get; } =
+        typeof(RuntimeCacheContext).GetMethod(nameof(CreateRuntimeTypeInfo),
+            BindingFlags.Static | BindingFlags.NonPublic)!;
+
     internal Dictionary<Type, ClaimTypeInfo>                 CachedClaimTypeInfos   { get; } = new();
     private  Dictionary<Type, InvokeHandler<object, object>> CollectionAdders       { get; } = new();
     private  Dictionary<Type, InvokeHandler<object, object>> ToArrayHandlers        { get; } = new();
     private  Dictionary<Type, InvokeHandler<object, object>> ToListHandlers         { get; } = new();
     private  Dictionary<Type, CtorHandler<object>>           CollectionConstructors { get; } = new();
+    private  Dictionary<Type, ClaimValueConverter>           ClaimValueConverters   { get; } = new();
 
     public InvokeHandler<object, object> GetToArrayHandler(Type elementType) =>
         TryGetOrAdd(ToArrayHandlers, elementType, () => ToArray.MakeGenericMethod(elementType).CreateInvoker());
@@ -87,6 +96,9 @@ internal class CacheContext
 
     public CtorHandler<object> GetCollectionConstructor(Type collectionType) =>
         TryGetOrAdd(CollectionConstructors, collectionType, () => collectionType.CreateCtor());
+
+    public ClaimValueConverter GetClaimValueConverter(Type type) =>
+        TryGetOrAdd(ClaimValueConverters, type, () => (ClaimValueConverter)Activator.CreateInstance(type));
 
     private static T TryGetOrAdd<T>(Dictionary<Type, T> source, Type type, Func<T> getter) where T : class
     {

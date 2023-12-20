@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Antelcat.ClaimSerialization.ComponentModel;
@@ -7,8 +8,11 @@ namespace Antelcat.ClaimSerialization.Tests.Runtime;
 
 public class IdentityModel
 {
-   
-    public  string? Name { get; set; } = nameof(Name);
+    public IdentityModel(int count)
+    {
+        
+    }
+    public required string? Name { get; set; } = nameof(Name);
 
     public  int Id { get; set; } = 123456;
 
@@ -27,7 +31,6 @@ public class IdentityModel
         Guest
     }
 }
-
 [JsonSerializable(typeof(IdentityModel))]
 public partial class JsonContext : JsonSerializerContext
 {

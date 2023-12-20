@@ -29,6 +29,4 @@
     </ItemGroup>
 
     <Import Project="..\Antelcat.ClaimSerialization.Shared\Antelcat.ClaimSerialization.Shared.projitems" Label="Shared"/>
-
-
 </Project>

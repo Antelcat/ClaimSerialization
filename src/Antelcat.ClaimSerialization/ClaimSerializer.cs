@@ -34,19 +34,45 @@ public static class ClaimSerializer
 
     public static IEnumerable<Claim> Serialize(object? value, Type? type)
     {
-        if (value == null) yield break;
+        if (value == null || type == null) yield break;
         foreach (var claim in ClaimTypeInfo.GetTypeInfo(type!).Serialize(value))
         {
             yield return claim;
         }
     }
-
     public static IEnumerable<Claim> Serialize(object? value) => Serialize(value, value?.GetType());
     public static IEnumerable<Claim> Serialize<T>(T value) => Serialize(value, typeof(T));
-
-    public static T? Deserialize<T>(IEnumerable<Claim> claims) where T : notnull =>
+    
+#if !NET46
+    public static IEnumerable<Claim> Serialize(object? value, Type? type, ClaimSerializerContext? context)
+    {
+        if (value == null || type == null) yield break;
+        if (context == null)
+        {
+            foreach (var claim in Serialize(value, type)) // fallback
+            {
+                yield return claim;
+            }
+            yield break;
+        }
+        var info = context.GetTypeInfo(type);
+        if (info == null) yield break;
+        foreach (var claim in info.Serialize(value))
+        {
+            yield return claim;
+        }
+    }
+    public static IEnumerable<Claim> Serialize(object? value, ClaimSerializerContext? context) => Serialize(value, value?.GetType(), context);
+    public static IEnumerable<Claim> Serialize<T>(T value, ClaimSerializerContext? context) => Serialize(value, typeof(T), context);
+    
+#endif
+    public static T? Deserialize<T>(IEnumerable<Claim> claims) =>
         (T?)ClaimTypeInfo.GetTypeInfo<T>().Deserialize(claims);
-
     public static object? Deserialize(IEnumerable<Claim> claims, Type type) =>
         ClaimTypeInfo.GetTypeInfo(type).Deserialize(claims);
+    
+#if !NET46
+    public static T? Deserialize<T>(IEnumerable<Claim> claims, ClaimSerializerContext? context) => (T?)Deserialize(claims, typeof(T), context);
+    public static object? Deserialize(IEnumerable<Claim> claims, Type type, ClaimSerializerContext? context) => context?.GetTypeInfo(type)?.Deserialize(claims);
+#endif
 }

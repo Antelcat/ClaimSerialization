@@ -21,14 +21,13 @@ public abstract class ClaimTypeInfo
         }
     }
 
-    public object? Deserialize(IEnumerable<Claim> claims)
+    public virtual object? Deserialize(IEnumerable<Claim> claims)
     {
         var target = Constructor.Create();
-        foreach (var claim in claims.GroupBy(x => x.Type))
-        {
-            var handler = Setters.FirstOrDefault(x => x.Type == claim.Key);
-            handler?.Set(target!, claim.Select(x => x.Value));
-        }
+        foreach (var claim in claims.GroupBy(x => x.Type)) 
+            Setters
+                .FirstOrDefault(x => x.Type == claim.Key)?
+                .Set(target!, claim.Select(x => x.Value));
 
         return target;
     }
@@ -36,17 +35,26 @@ public abstract class ClaimTypeInfo
     internal static ClaimTypeInfo GetTypeInfo<T>()
     {
         var type = typeof(T);
-        if (CacheContext.Default.CachedClaimTypeInfos.TryGetValue(type, out var info)) return info;
-        info = new RuntimeClaimTypeInfo<T>();
-        CacheContext.Default.CachedClaimTypeInfos.Add(type, info);
+        if (RuntimeCacheContext.Default.CachedClaimTypeInfos.TryGetValue(type, out var info)) return info;
+        lock (RuntimeCacheContext.Default.CachedClaimTypeInfos)
+        {
+            if (RuntimeCacheContext.Default.CachedClaimTypeInfos.TryGetValue(type, out info)) return info;
+            info = new RuntimeClaimTypeInfo<T>();
+            RuntimeCacheContext.Default.CachedClaimTypeInfos.Add(type, info);
+        }
         return info;
     }
 
     internal static ClaimTypeInfo GetTypeInfo(Type type)
     {
-        if (CacheContext.Default.CachedClaimTypeInfos.TryGetValue(type, out var info)) return info;
-        info = (ClaimTypeInfo)Activator.CreateInstance(typeof(RuntimeClaimTypeInfo<>).MakeGenericType(type));
-        CacheContext.Default.CachedClaimTypeInfos.Add(type, info);
+        if (RuntimeCacheContext.Default.CachedClaimTypeInfos.TryGetValue(type, out var info)) return info;
+        lock (RuntimeCacheContext.Default.CachedClaimTypeInfos)
+        {
+            if (RuntimeCacheContext.Default.CachedClaimTypeInfos.TryGetValue(type, out info)) return info;
+            info = RuntimeCacheContext.Default.CreateRuntimeTypeInfo(type);
+            RuntimeCacheContext.Default.CachedClaimTypeInfos.Add(type, info);
+        }
         return info;
     }
+
 }

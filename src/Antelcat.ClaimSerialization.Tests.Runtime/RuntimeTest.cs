@@ -7,7 +7,7 @@ public class RuntimeTest
     [Test]
     public void TestRuntime()
     {
-        var claims = ClaimSerializer.Serialize(new IdentityModel
+        var claims = ClaimSerializer.Serialize((object)new IdentityModel
         {
             Roles = new SortedSet<IdentityModel.Role>
             {
@@ -59,19 +59,12 @@ public class RuntimeTest
     }
 
     [Test]
-    [Req(Arg = "")]
     public void TestRef()
     {
-        var a = (object)1;
-
-        Func<object?, object?>     c = o => o;
-        Console.WriteLine(a);
+        var ctor = typeof(List<>).GetConstructors().First();
+        var a = ctor.ContainsGenericParameters;
+        ctor.Invoke( typeof(List<>).MakeGenericType(typeof(int)), []);
     }
 
 }
 
-public class ReqAttribute : Attribute
-{
-    public required string Arg { get; set; }
-}
-delegate void Setter<T>(ref T target, T value);

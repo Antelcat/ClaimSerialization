@@ -8,18 +8,18 @@ using Antelcat.ClaimSerialization.ComponentModel;
 using Antelcat.ClaimSerialization.SourceGenerators.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Xunit;
+using NUnit.Framework;
 
 namespace Antelcat.ClaimSerialization.Tests.CompileTime;
 
 public class CompileTimeTests
 {
-    [Fact]
+    [Test]
     public void Generate()
     {
         var path = Path.GetFullPath(@"..\..\..\..\");
         // Create an instance of the source generator.
-        var generator = new ClaimSerializeGenerator();
+        var generator = new ClaimSerializeContextGenerator();
         
         // Source generators should be tested using 'GeneratorDriver'.
         var driver = CSharpGeneratorDriver.Create(generator);
@@ -40,7 +40,6 @@ public class CompileTimeTests
         // Run generators and retrieve all results.
         var runResult = driver.RunGenerators(compilation).GetRunResult();
         // All generated files can be found in 'RunResults.GeneratedTrees'.
-        var generatedFileSyntax = runResult.GeneratedTrees.Single(t => t.FilePath.EndsWith("Vector3.g.cs"));
     }
 
     public class Foo : JsonConverter<string>
