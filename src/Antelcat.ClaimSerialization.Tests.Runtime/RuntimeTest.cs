@@ -7,8 +7,10 @@ public class RuntimeTest
     [Test]
     public void TestRuntime()
     {
-        var claims = ClaimSerializer.Serialize((object)new IdentityModel
+        var claims = ClaimSerializer.Serialize(
+            new IdentityModel(1)
         {
+            Name = "",
             Roles = new SortedSet<IdentityModel.Role>
             {
                 IdentityModel.Role.Admin,
