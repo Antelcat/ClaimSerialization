@@ -29,18 +29,8 @@ internal sealed class RuntimeClaimTypeInfo<T> : ClaimTypeInfo
         Getters     = ResolveGetHandlers(claimProps).ToArray();
     }
 
-    private static string GetClaimType(MemberInfo property)
-    {
-        var claimType = property.Name;
-        var attr = property.CustomAttributes
-            .FirstOrDefault(x => x.AttributeType == typeof(ClaimTypeAttribute));
-        if (attr != null)
-        {
-            claimType = attr.ConstructorArguments[0].Value as string ?? property.Name;
-        }
-
-        return claimType;
-    }
+    private static string GetClaimType(MemberInfo property) =>
+        property.GetCustomAttribute<ClaimTypeAttribute>()?.Type ?? property.Name;
 
     private static IEnumerable<SetProperty> ResolveSetHandlers(
         IEnumerable<PropertyInfo> properties) =>
