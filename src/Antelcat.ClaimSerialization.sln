@@ -17,8 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Antelcat.ClaimSerialization
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "__", "__", "{E2C896D1-7BBD-417A-8574-2F684E0CC15A}"
 	ProjectSection(SolutionItems) = preProject
-		..\README.md = ..\README.md
 		..\Icon.png = ..\Icon.png
+		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Antelcat.ClaimSerialization.Tests.Runtime", "Antelcat.ClaimSerialization.Tests.Runtime\Antelcat.ClaimSerialization.Tests.Runtime.csproj", "{09C48496-D93E-4C1F-BE59-FAA226206B19}"
@@ -67,7 +67,7 @@ Global
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Antelcat.ClaimSerialization.Shared\Antelcat.ClaimSerialization.Shared.projitems*{14b0ca6c-6ead-44c6-84ca-fb351b713cb9}*SharedItemsImports = 5
-		Antelcat.ClaimSerialization.Shared\Antelcat.ClaimSerialization.Shared.projitems*{1b45914a-8727-462d-a8cf-d60ec3659579}*SharedItemsImports = 5
+		Antelcat.ClaimSerialization.Shared\Antelcat.ClaimSerialization.Shared.projitems*{3a766e62-ac05-4f91-ade7-8356c750ef52}*SharedItemsImports = 5
 		Antelcat.ClaimSerialization.Shared\Antelcat.ClaimSerialization.Shared.projitems*{a5e305bf-c775-48f9-8a19-8b4d84f90983}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal
